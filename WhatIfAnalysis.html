@@ -1,0 +1,197 @@
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Flot Examples With SharePoint</title>
+    
+
+    <!--[if IE]><script  language="javascript" type="text/javascript" src="scripts/excanvas.min.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript" src="scripts/jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="scripts/jquery.flot.js"></script>
+	<script language="javascript" type="text/javascript" src="scripts/jquery.tmpl.min.js"></script>
+<script id="whatifTemplate" type="text/x-jquery-tmpl">
+	{{each months}} <li>${$value}:  <input class='whatifinput' type='text' value='' /> </li> {{/each}}
+</script>	
+	
+ </head>
+<body>
+
+<h1> What-If Analysis </h1>
+
+<p><h2>Donut Sales</h2></p>
+<table >
+<tr>
+<td valign="top">
+<div id="columnchart" style="width:600px;height:300px" >
+</div>
+</td>
+<td width="300px" valign="top">
+<div id="columnchartlabels"></div>
+</td>
+</tr>
+</table>
+
+<ul id="whatif" style="list-style: none;">
+
+</ul>
+<input id='calculate' type='button' value="Calculate" />
+
+
+<script>
+
+
+function PlotGraph( d , id, labelId)
+{
+
+ $.plot($(id), d,
+  {
+    xaxis: {
+        ticks: 11,
+    tickFormatter: function(x) {
+          var Months=new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+     return Months[x] ; }
+   },
+    legend: { 
+		show: true,
+		backgroundOpacity: 0.8,
+		container: labelId,
+	    labelFormatter: function(label, series) {						
+		  return '<span class="legendLabel">'+ label + '</span>';
+		}	
+	}	
+	});
+}
+
+	
+
+
+
+function roundNumber(num, dec) {
+  var result = String(Math.round(num*Math.pow(10,dec))/Math.pow(10,dec));
+  if(result.indexOf('.')<0) {
+result+= '.';
+  }
+  while(result.length- result.indexOf('.')<=dec) {result+= '0';}
+  if (dec==0)
+     result = result.replace('.','');
+  return result;
+}
+
+function getFloatValue(n)
+{
+   x = parseFloat(n);
+   if (isNaN(x))
+   {
+x = 0;
+   }
+   return parseFloat(roundNumber(x,2));
+}
+
+
+
+function getSales()
+{
+
+/*** This method is supposed to get data from SharePoint, but for the sake of simplicity, we are going to
+skip that step and hardcode the data.
+***/
+
+
+var donutSales = [ [0,7000],[1,8200],[2,8300],[3,8200],[4,8000],[5,8300]];
+var donutSalesMinTargetData = [[0,8000],[11,8000]];
+var donutSalesMaxTargetData = [[0,10000],[11,10000]];
+var donutSalesMaxTrend = [];
+
+var donutSalesData = new Array();
+
+var sales = {label: "Donut Sales", data:donutSales,lines: { show: true ,lineWidth:3},color:"black"} ;
+var maxLimit = {label: "High Range", data: donutSalesMaxTargetData, lines: { show: true, lineWidth: 3, fill: 0.3 },color:"green" };
+var minLimit = {label: "Low range", data: donutSalesMinTargetData, lines: { show: true, lineWidth: 3, fill: 0.9},color:"red" };
+
+var trendData = LinearReg(donutSales,6 );
+
+var trend = {label: "Sales Trend", data:trendData,lines: { show: true ,lineWidth:3},color:"blue"} ;
+
+donutSalesData.push(minLimit);
+donutSalesData.push(maxLimit);
+donutSalesData.push(sales);
+donutSalesData.push(trend);
+
+PlotGraph( donutSalesData,"#columnchart", "#columnchartlabels");
+
+var remainingMonths = {months:["Jul","Aug","Sep","Oct","Nov","Dec"]};
+
+$( "#whatifTemplate" ).tmpl( remainingMonths ).appendTo( "#whatif" );	
+
+
+//Calculate Trend based on data input for remaining months
+$("#calculate").click(function() {   
+		   var newsales= $.extend([], donutSales);
+		   
+		   var newsalesData =  new Array();
+		  $(".whatifinput").each(function(i,el){
+			var n =	 i + donutSales.length ;
+			var val = parseFloat($(el).val());
+			if (val >0){
+			    newsales.push([n,val]);
+		    }
+		});
+		trendData = LinearReg(newsales,6 );
+		trend = {label: "Sales Trend", data:trendData,lines: { show: true ,lineWidth:3},color:"blue"} ;		
+		newsalesData.push(minLimit);
+		newsalesData.push(maxLimit);
+		newsalesData.push(newsales);
+		newsalesData.push(trend);
+		
+		PlotGraph( newsalesData,"#columnchart", "#columnchartlabels");
+		});
+
+
+}
+
+
+
+
+
+
+
+function LinearReg(lndata )
+{
+  XintoY = [];
+  XintoX = [];
+  SumofX = 0;
+  SumofY = 0;
+  SumofXY = 0;
+  SumofXX = 0; 
+  for (var i=0; i < lndata.length; i++)
+  {
+     x = lndata[i][0];	 
+	 y = lndata[i][1];
+	 XintoY[i] = x * y;
+	 XintoX[i] = x * x;
+	 SumofX += x;
+	 SumofY += y;
+	 SumofXX += XintoX[i];
+	 SumofXY += XintoY[i];	 
+  }
+   var n = lndata.length;
+   b =  ((n * SumofXY) - (SumofX * SumofY))/(n*SumofXX - SumofX*SumofX );
+   a = (SumofY - (b*SumofX)) / n ;    	
+	retData = [];	
+    for (var i=0; i < 12; i++)
+	{
+	  y1 = a + b * i;	  
+      retData.push([i,y1]);
+	}	
+   return retData;
+}
+
+
+getSales();
+
+
+
+
+</script>
+
+</body>
+</html>
