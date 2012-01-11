@@ -9,7 +9,7 @@
     <script language="javascript" type="text/javascript" src="scripts/jquery.flot.js"></script>
 	<script language="javascript" type="text/javascript" src="scripts/jquery.tmpl.min.js"></script>
 <script id="whatifTemplate" type="text/x-jquery-tmpl">
-	{{each months}} <li>${$value}:  <input class='whatifinput' type='text' value='' /> </li> {{/each}}
+	{{each months}} <tr><td>${$value}</td><td><input class='whatifinput' type='text' value='' /> </td></tr> {{/each}}
 </script>	
 	
  </head>
@@ -30,9 +30,10 @@
 </tr>
 </table>
 
-<ul id="whatif" style="list-style: none;">
+<table id="whatif"  border='1'>
 
-</ul>
+</table>
+</br>
 <input id='calculate' type='button' value="Calculate" />
 
 
@@ -122,7 +123,6 @@ var remainingMonths = {months:["Jul","Aug","Sep","Oct","Nov","Dec"]};
 
 $( "#whatifTemplate" ).tmpl( remainingMonths ).appendTo( "#whatif" );	
 
-
 //Calculate Trend based on data input for remaining months
 $("#calculate").click(function() {   
 		   var newsales= $.extend([], donutSales);
@@ -147,11 +147,6 @@ $("#calculate").click(function() {
 
 
 }
-
-
-
-
-
 
 
 function LinearReg(lndata )
