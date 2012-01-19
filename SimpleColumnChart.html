@@ -1,0 +1,81 @@
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <!--[if IE]><script  language="javascript" type="text/javascript" src="scripts/excanvas.min.js"></script><![endif]-->   
+    <script language="javascript" type="text/javascript" src="scripts/jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="scripts/jquery.flot.js"></script>       
+    
+    <title>Simple Column Chart With JavaScript and SharePoint</title>    
+</head>
+
+<body>
+
+<h1> Total Sales </h1> 
+
+<div id="simplecolumnchart" style="width:600px;height:300px" >
+</div>
+
+
+<script>
+
+function PlotGraph( d , id)
+{
+
+ $.plot($(id), d,
+  {
+    series: {
+    bars: { show: true, barWidth: 0.2, align:'center',fill :0.8, fillColor: { colors: [ { opacity: 0.9 }, { opacity: 0.6 } ] }}
+    },
+    xaxis: {
+        ticks: 5,
+    tickFormatter: function(x) {
+          var Months=new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+     return Months[x] ; }
+   },
+    legend: {
+        show: true
+     },
+    grid: { hoverable: true } 
+});
+}
+
+
+function getSalesDummyData(){
+	var d1 = [];
+    
+    d1.push([0,3000]);
+    d1.push([1,3200]);
+    d1.push([2,3500]);
+    d1.push([3,3200]);
+    d1.push([4,3000]);
+    d1.push([5,2800]);
+
+  donutSales =  [ { label: "Donuts",  data: d1} ];  	
+	//Call the Plot function with our donut sales data
+	PlotGraph( donutSales,"#simplecolumnchart");    
+}
+
+function getFloatValue(n)
+{
+   x = parseFloat(n);
+   if (isNaN(x))
+   { 
+	x = 0;
+   }
+   return parseFloat(roundNumber(x,2));
+}
+
+//getSales();
+
+
+getSalesDummyData();
+
+
+
+
+</script>
+
+
+</body>
+</html>

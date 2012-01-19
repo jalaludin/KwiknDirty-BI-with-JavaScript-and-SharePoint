@@ -1,0 +1,176 @@
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Slice n Dice  With JavaScript and SharePoint</title>     
+        
+    <!--[if IE]><script  language="javascript" type="text/javascript" src="scripts/excanvas.min.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript" src="scripts/jquery.js"></script>    
+    <script language="javascript" type="text/javascript" src="scripts/jquery.tmpl.min.js"></script>    
+    
+<script id="salesTemplate" type="text/x-jquery-tmpl">
+    <tr>       
+		<td>	
+            <a href="JavaScript:getDetails('${region}')">${region}</a>
+		</td>
+		<td align="middle">	
+            ${firstqsales}
+		</td>
+		<td align="middle">	
+            ${secondqsales}
+		</td>
+		<td>	
+            ${notes}
+		</td>	
+		<td>	
+            <a href='http://<SPServerURL>/Lists/DiscussSales/EditForm.aspx?ID=${notesid}'>Discuss</a>
+		</td>		
+    </tr>
+</script>
+
+<script id="detailedsalesTemplate" type="text/x-jquery-tmpl">
+    <tr>       
+		<td>	
+            ${region}
+		</td>
+		<td align="middle">	
+            ${firstqsales}
+		</td>
+		<td align="middle">	
+            ${secondqsales}
+		</td>
+		<td>	
+            ${notes}
+		</td>	
+		<td>	
+            <a href='http://<SPServerURL>/Lists/DiscussSales/EditForm.aspx?ID=${notesid}'>Discuss</a>
+		</td>		
+    </tr>
+</script>
+	
+ </head>
+<body>
+
+<h1> Slice and Dice </h1>
+
+<p><h2>Donut Sales</h2></p>
+<table id="DonutSales" border=1, cellpadding=2>
+<thead><th>Region</th><th>1st Qtr Sales</th><th>2nd Qtr Sales</th><th>Notes</th></thead>
+</table>
+
+<div id='detailedSales' >
+<p><h2 id='region'></h2></p>
+<table id="DetailSales" border=1, cellpadding=2>
+<thead><th>City</th><th>1st Qtr Sales</th><th>2nd Qtr Sales</th><th>Notes</th></thead>
+</table>
+</div>
+
+<script>
+ 
+function getDetails(region)
+{	
+	$("#detailedSales").show();
+	$('#region').html("Sales: " + region);
+	getSalesByRegion(region);
+}
+
+function roundNumber(num, dec) {
+  var result = String(Math.round(num*Math.pow(10,dec))/Math.pow(10,dec));
+  if(result.indexOf('.')<0) {
+result+= '.';
+  }
+  while(result.length- result.indexOf('.')<=dec) {result+= '0';}
+  if (dec==0)
+     result = result.replace('.','');
+  return result;
+}
+
+function getFloatValue(n)
+{
+   x = parseFloat(n);
+   if (isNaN(x))
+   {
+x = 0;
+   }
+   return parseFloat(roundNumber(x,2));
+}
+
+
+function getSales()
+{
+
+/*** This method is supposed to get data from SharePoint, but for the sake of simplicity, we are going to
+skip that step and hardcode the data.
+***/
+$("#detailedSales").hide();
+
+var donutSalesData = new Array();
+	donutSalesData.push({ region: "East", 	firstqsales: "10000",
+				secondqsales: "12000", 
+				notes: "Sales target met. On track for third qtr",
+				notesid: 2				
+				});
+				
+		donutSalesData.push({ region: "West",
+			firstqsales: "14000",
+			secondqsales: "13000",
+			notes: "Sales affected by supplies from Denver plant.",
+			notesid: 3
+			});
+			
+
+$( "#salesTemplate" ).tmpl( donutSalesData ).appendTo( "#DonutSales" );	
+}
+
+function getSalesByRegion(region)
+{
+
+
+var westSalesData = new Array();
+	westSalesData.push({ region: "Los Angeles", 	firstqsales: "10000",
+				secondqsales: "8000", 
+				notes: "Sales target met. On track for third qtr",
+				notesid: 4				
+				});
+				
+		westSalesData.push({ region: "Seattle",
+			firstqsales: "4000",
+			secondqsales: "5000",
+			notes: "Target met",
+			notesid: 5
+			});
+
+var eastSalesData = new Array();
+	eastSalesData.push({ region: "New York", 	firstqsales: "8000",
+				secondqsales: "9000", 
+				notes: "Sales target met. On track for third qtr",
+				notesid: 6				
+				});
+				
+		eastSalesData.push({ region: "Philadelphia",
+			firstqsales: "2000",
+			secondqsales: "3000",
+			notes: "Target not met",
+			notesid: 7
+			});
+
+
+$("#DetailSales").find("tr:gt(0)").remove();
+
+if (region =="East")			
+	
+	$( "#detailedsalesTemplate" ).tmpl( eastSalesData ).appendTo( "#DetailSales" );	
+else 
+	$( "#detailedsalesTemplate" ).tmpl( westSalesData ).appendTo( "#DetailSales" );	
+
+
+}
+
+getSales();
+
+
+
+
+</script>
+
+</body>
+</html>
