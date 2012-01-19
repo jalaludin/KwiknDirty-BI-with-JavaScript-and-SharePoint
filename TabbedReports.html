@@ -1,0 +1,314 @@
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Tabbed Reports With JavaScript and SharePoint</title>
+    
+<style>
+UL.tabNavigation {
+list-style: none;
+margin: 2;
+padding: 1;
+}
+ 
+UL.tabNavigation LI {
+display: inline;
+margin: 2;
+padding: 1;
+color: #ffffff;
+}
+
+UL.tabNavigation LI A {
+padding: 5px 7px;
+background-color: #255B89;
+color: #ffffff;
+}
+
+UL.tabNavigation LI A.selected,
+UL.tabNavigation LI A:hover {
+background-color: #616D7E;
+color: #ffffff;
+padding-top: 7px;
+}
+
+UL.tabNavigation LI A:focus {
+outline: 0;
+}
+
+div.tabs > div {
+padding: 5px;
+margin-top: 3px;
+border: 5px solid #333;
+}
+
+div.tabs > div h2 {
+margin-top: 0;
+}
+
+</style>
+
+    <!--[if IE]><script language="javascript" type="text/javascript" src="scripts/excanvas.min.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript" src="scripts/jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="scripts/jquery.flot.js"></script>
+    <script language="javascript" type="text/javascript" src="scripts/jquery.flot.stack.js"></script>
+    <script language="javascript" type="text/javascript" src="scripts/underscore.js"></script>
+
+ </head>
+<body>
+
+<h1> Tabbed Reports and Printing </h1>
+
+<div class="tabs">
+<table width="100%">
+<tr>
+<td>
+<ul class="tabNavigation">
+<li><a class="selected" href="#Donuts">Desserts</a></li>
+<li><a href="#Fruits">Fruit</a></li>
+</ul>
+</td>
+<td valign="top" align="right">
+<a href="javascript:void(0)" id="PrintReport">Print View</a>
+</tr>
+</table>
+
+<div id="Donuts" class="tab_content" >
+<p><h2>Donut Sales</h2></p>
+<div id="simplecolumnchart" style="width:600px;height:300px" >
+</div>
+</div>
+
+<div id="Fruits" class="tab_content" >
+<p style="page-break-before: always"><h2>Fruit Sales</h2></p>
+<table>
+<tr>
+<td valign='top'>
+<div id="stackedcolumnwithline" style="width:600px;height:400px" >
+</div>
+</td>
+<td valign='top'>
+<div id='labels'></div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+
+<script>
+
+function enableTooltip(id)
+{
+//add tooltip event
+$(id).bind("plothover", function (event, pos, item) {
+if (item) {
+if (previousPoint != item.datapoint) {
+previousPoint = item.datapoint;
+
+$('#tooltip').remove();
+var x = item.datapoint[0];
+//All the bars concerning a same x value must display a tooltip with this value and not the shifted value
+if(item.series.bars.order){
+for(var i=0; i < item.series.data.length; i++){
+if(item.series.data[i][3] == item.datapoint[0])
+x = item.series.data[i][0];
+}
+}
+var y = item.datapoint[1];
+showTooltip(item.pageX+25, item.pageY+25, y);
+}
+}
+else {
+$('#tooltip').remove();
+previousPoint = null;
+}
+});	  
+}
+
+function showTooltip(x, y, contents) {
+        $('<div id="tooltip">' + contents + '</div>').css( {
+            position: 'absolute',
+            display: 'none',
+            top: y + 5,
+            left: x + 5,
+            border: '1px solid #fdd',
+            padding: '2px',
+            'background-color': '#ccc',
+            opacity: 0.90
+        }).appendTo("body").fadeIn(200);
+}
+
+	
+
+
+function PlotGraph( d , id)
+{
+
+ $.plot($(id), d,
+  {
+    series: {
+    bars: { show: true, barWidth: 0.2, align:'center',fill :0.8, fillColor: { colors: [ { opacity: 0.9 }, { opacity: 0.6 } ] }}
+    },
+    xaxis: {
+        ticks: 5,
+    tickFormatter: function(x) {
+          var Months=new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+     return Months[x] ; }
+   },
+    legend: {
+        show: true
+     },
+	grid: { hoverable: true } 
+});
+enableTooltip(id);
+}
+
+
+
+function PlotStackedColumnWithLine( data , id)
+{
+
+    $.plot($(id), data , {
+series: { stack: true },
+colors: ["red", "orange", "black"],
+xaxis: {
+        ticks: 5,
+tickFormatter: function(x) {
+var Months=new Array("Jan-11","Feb-11","Mar-11","Apr-11","May-11","Jun-11","Jul-11","Aug-11","Sep-11","Oct-11","Nov-11","Dec-11");
+return Months[x] ;
+}
+},
+legend: {
+show: true,
+backgroundOpacity: 0.8,
+container: "#labels",
+labelFormatter: function(label, series) {
+return '<span>'+ label + '</span>';
+}
+}
+});
+
+}
+
+
+function roundNumber(num, dec) {
+  var result = String(Math.round(num*Math.pow(10,dec))/Math.pow(10,dec));
+  if(result.indexOf('.')<0) {
+result+= '.';
+  }
+  while(result.length- result.indexOf('.')<=dec) {result+= '0';}
+  if (dec==0)
+     result = result.replace('.','');
+  return result;
+}
+
+function getFloatValue(n)
+{
+   x = parseFloat(n);
+   if (isNaN(x))
+   {
+x = 0;
+   }
+   return parseFloat(roundNumber(x,2));
+}
+
+
+function getSales()
+{
+
+/*** This method is supposed to get data from SharePoint, but for the sake of simplicity, we are going to
+skip that step and hardcode the data.
+***/
+
+
+var fruitSalesData = [ ];
+var donutSalesData = [];
+var lineItem;
+
+
+lineItem = {label: "Donut Sales", data:[ [0,3000],[1,3200],[2,2500],[3,2200],[4,1200],[5,2000]] };
+donutSalesData.push(lineItem);
+PlotGraph( donutSalesData,"#simplecolumnchart");
+
+
+lineItem = setbars ("Apples", [ [0,3000],[1,3200],[2,2500],[3,2200],[4,1200],[5,2000]] );
+fruitSalesData.push(lineItem);
+lineItem = setbars ("Oranges", [ [0,1000],[1,1200],[2,1500],[3,1200],[4,200],[5,200]] );
+fruitSalesData.push(lineItem);
+lineItem = {
+data: [ [0,4000],[1,6200],[2,5500],[3,5200],[4,4200],[5,5200]],
+label: "Trend",
+lines: { show: true, steps: false },
+stack: null
+};
+fruitSalesData.push(lineItem);
+
+PlotStackedColumnWithLine( fruitSalesData,"#stackedcolumnwithline");
+init();
+
+
+
+}
+
+function setbars(title, d)
+{
+   var bardata = {
+label: title,
+data: d,
+bars: {
+show: true ,
+lineWidth: 0,
+barWidth: 0.4,
+fill: true,
+fillColor: { colors: [ { opacity: 0.9 }, { opacity: 0.9 } ] }
+}
+};
+return bardata;
+}
+
+var showMenu = true;
+function gotoPrintReport()
+{
+
+	var tabs = ["#Donuts","#Fruits"];
+	
+	 showMenu = !showMenu;
+	 if (!showMenu)
+	 {
+		$(".tabNavigation").hide();		
+		_.each(tabs, function(x){$(x).show(); });
+	 }
+	 else
+	 {
+		$(".tabNavigation").show();		
+		_.each(tabs, function(x){$(x).hide(); });
+		$(tabs[0]).show();
+	 }	
+}
+
+function init()
+{
+/**Initialize tabs  **/
+var tabContainers = $('div.tabs > div');
+$('div.tabs ul.tabNavigation a').click(function () {
+tabContainers.hide();
+tabContainers.filter(this.hash).show();
+$('div.tabs ul.tabNavigation a').removeClass('selected');
+$(this).addClass('selected');
+return false;
+});
+var tabContainers = $('div.tabs > div');
+tabContainers.hide().filter(':first').show();
+}
+
+/**Initialize Print **/
+
+	$("#PrintReport").click(function() {
+		gotoPrintReport();
+	});
+
+getSales();
+
+
+</script>
+
+</body>
+</html>
