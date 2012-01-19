@@ -41,6 +41,63 @@ function PlotGraph( d , id)
 }
 
 
+function getSales()
+{
+var soapEnv = "<soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'> \
+                <soapenv:Body> \
+                     <GetListItems xmlns='http://schemas.microsoft.com/sharepoint/soap/'> \
+                        <listName>SalesList</listName> \
+                        <viewFields> \
+			<ViewFields> \
+                            <FieldRef Name='Title' /> \
+                            <FieldRef Name='Jan' /> \
+                            <FieldRef Name='Feb' /> \
+                            <FieldRef Name='Mar' /> \
+                            <FieldRef Name='Apr' /> \
+                            <FieldRef Name='May' /> \
+                            <FieldRef Name='Jun' /> \
+                        </ViewFields> \
+                        </viewFields> \
+                    </GetListItems> \
+                </soapenv:Body> \
+            </soapenv:Envelope>";
+        $.ajax({ 
+            url: "<Path To your SP Site>/_vti_bin/lists.asmx",
+            type: "POST",
+            dataType: "xml",
+            data: soapEnv,
+            complete: processSalesReport,
+            contentType: "text/xml; charset=\"utf-8\""
+        });
+}
+
+function processSalesReport(xData, status)
+{
+	var salesData = [ ];
+	$(xData.responseXML).find("z\\:row").each(function() {
+           
+            try 
+            { 
+			  var Title =  $(this).attr("ows_Title");
+			  var Jan =  getFloatValue($(this).attr("ows_Jan"));
+			  var Feb =  getFloatValue($(this).attr("ows_Feb"));
+			  var Mar =  getFloatValue($(this).attr("ows_Mar"));
+			  var Apr =  getFloatValue($(this).attr("ows_Apr"));
+			  var May =  getFloatValue($(this).attr("ows_May"));
+			  var Jun =  getFloatValue($(this).attr("ows_Jun"));
+			  
+			  d1 = [ [0,Jan],[1,Feb],[2,Mar],[3,Apr],[4,May],[5,Jun]];
+			  var lineItem = {label: Title, data: d1};
+			  salesData.push(lineItem);
+            }
+           catch (e)
+           {
+                    alert(e.description );
+            }
+        });							
+             PlotGraph( salesData,"#simplecolumnchart");    
+}
+
 function getSalesDummyData(){
 	var d1 = [];
     
