@@ -22,7 +22,7 @@
             ${notes}
 		</td>	
 		<td>	
-            <a href='http://<SPServerURL>/Lists/DiscussSales/EditForm.aspx?ID=${notesid}'>Discuss</a>
+            <a href="Discuss('http://<SPServerURL>/Lists/DiscussSales/EditForm.aspx?ID=${notesid}')">Discuss</a>
 		</td>		
     </tr>
 </script>
@@ -65,6 +65,11 @@
 </div>
 
 <script>
+ 
+ function Discuss(url){
+ 	
+    alert("Replace SPServerURL with your server: " + url) ;
+ }
  
 function getDetails(region)
 {	
